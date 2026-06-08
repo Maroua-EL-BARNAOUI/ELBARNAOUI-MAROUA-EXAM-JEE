@@ -1,0 +1,229 @@
+<main class="app-shell">
+  <aside class="sidebar">
+    <div>
+      <p class="eyebrow">Banque</p>
+      <h1>Gestion des credits</h1>
+    </div>
+
+    <nav aria-label="Navigation principale">
+      <a href="#clients">Clients</a>
+      <a href="#credits">Credits</a>
+      <a href="#remboursements">Remboursements</a>
+    </nav>
+
+    <div class="sidebar-metric">
+      <span>{{ clients.length }}</span>
+      <small>clients</small>
+    </div>
+    <div class="sidebar-metric">
+      <span>{{ credits.length }}</span>
+      <small>credits affiches</small>
+    </div>
+  </aside>
+
+  <section class="workspace">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Back-office</p>
+        <h2>Suivi des demandes, decisions et remboursements</h2>
+      </div>
+      <button type="button" class="ghost-button" (click)="refreshData()">Actualiser</button>
+    </header>
+
+    <div class="feedback success" *ngIf="message">{{ message }}</div>
+    <div class="feedback error" *ngIf="error">{{ error }}</div>
+
+    <section id="clients" class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Clients</p>
+          <h3>Nouveau client</h3>
+        </div>
+      </div>
+
+      <form class="form-grid compact" (ngSubmit)="createClient()" #clientNgForm="ngForm">
+        <label>
+          Nom
+          <input name="nom" [(ngModel)]="clientForm.nom" required placeholder="Nom du client" />
+        </label>
+        <label>
+          Email
+          <input name="email" type="email" [(ngModel)]="clientForm.email" required placeholder="client@email.com" />
+        </label>
+        <button type="submit" [disabled]="clientNgForm.invalid">Ajouter</button>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nom</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let client of clients">
+              <td>{{ client.id }}</td>
+              <td>{{ client.nom }}</td>
+              <td>{{ client.email }}</td>
+            </tr>
+            <tr *ngIf="clients.length === 0">
+              <td colspan="3" class="empty">Aucun client enregistre</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="credits" class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Credits</p>
+          <h3>Nouvelle demande</h3>
+        </div>
+        <label class="filter">
+          Statut
+          <select [(ngModel)]="selectedStatut" name="selectedStatut" (change)="loadCredits()">
+            <option value="">Tous</option>
+            <option *ngFor="let statut of statuts" [value]="statut">{{ formatType(statut) }}</option>
+          </select>
+        </label>
+      </div>
+
+      <form class="form-grid" (ngSubmit)="createCredit()" #creditNgForm="ngForm">
+        <label>
+          Client
+          <select name="clientId" [(ngModel)]="creditForm.clientId" required>
+            <option [ngValue]="0" disabled>Selectionner</option>
+            <option *ngFor="let client of clients" [ngValue]="client.id">{{ client.nom }}</option>
+          </select>
+        </label>
+        <label>
+          Type
+          <select name="typeCredit" [(ngModel)]="creditForm.typeCredit">
+            <option *ngFor="let type of typesCredit" [value]="type">{{ formatType(type) }}</option>
+          </select>
+        </label>
+        <label>
+          Montant
+          <input name="montant" type="number" min="1" [(ngModel)]="creditForm.montant" required />
+        </label>
+        <label>
+          Duree
+          <input name="dureeRemboursement" type="number" min="1" [(ngModel)]="creditForm.dureeRemboursement" required />
+        </label>
+        <label>
+          Taux
+          <input name="tauxInteret" type="number" min="0" step="0.1" [(ngModel)]="creditForm.tauxInteret" required />
+        </label>
+        <label *ngIf="creditForm.typeCredit !== 'IMMOBILIER'">
+          Motif
+          <input name="motif" [(ngModel)]="creditForm.motif" placeholder="Achat voiture, etudes..." />
+        </label>
+        <label *ngIf="creditForm.typeCredit === 'IMMOBILIER'">
+          Type du bien
+          <select name="typeBien" [(ngModel)]="creditForm.typeBien">
+            <option *ngFor="let type of typesBien" [value]="type">{{ formatType(type) }}</option>
+          </select>
+        </label>
+        <label *ngIf="creditForm.typeCredit === 'PROFESSIONNEL'">
+          Raison sociale
+          <input name="raisonSociale" [(ngModel)]="creditForm.raisonSociale" placeholder="Entreprise SARL" />
+        </label>
+        <button type="submit" [disabled]="creditNgForm.invalid || !creditForm.clientId">Enregistrer</button>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Client</th>
+              <th>Type</th>
+              <th>Montant</th>
+              <th>Duree</th>
+              <th>Taux</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let credit of credits" [class.selected]="selectedCredit?.id === credit.id">
+              <td>{{ credit.id }}</td>
+              <td>{{ credit.clientNom }}</td>
+              <td>{{ formatType(credit.typeCredit) }}</td>
+              <td>{{ credit.montant | currency:'MAD':'symbol':'1.0-2' }}</td>
+              <td>{{ credit.dureeRemboursement }} mois</td>
+              <td>{{ credit.tauxInteret }}%</td>
+              <td><span class="status" [ngClass]="credit.statut">{{ formatType(credit.statut) }}</span></td>
+              <td class="actions">
+                <button type="button" class="icon-button" title="Afficher" (click)="selectCredit(credit)">Voir</button>
+                <button type="button" class="icon-button accept" title="Accepter" (click)="accepterCredit(credit)">OK</button>
+                <button type="button" class="icon-button reject" title="Rejeter" (click)="rejeterCredit(credit)">Non</button>
+              </td>
+            </tr>
+            <tr *ngIf="credits.length === 0">
+              <td colspan="8" class="empty">Aucun credit trouve</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="remboursements" class="panel details-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Remboursements</p>
+          <h3>{{ selectedCredit ? 'Credit #' + selectedCredit.id : 'Selectionner un credit' }}</h3>
+        </div>
+        <div class="monthly" *ngIf="mensualite">
+          <span>{{ mensualite | currency:'MAD':'symbol':'1.0-2' }}</span>
+          <small>mensualite estimee</small>
+        </div>
+      </div>
+
+      <form class="form-grid compact" (ngSubmit)="createRemboursement()" #remboursementNgForm="ngForm" *ngIf="selectedCredit">
+        <label>
+          Date
+          <input name="date" type="date" [(ngModel)]="remboursementForm.date" required />
+        </label>
+        <label>
+          Montant
+          <input name="montantRemboursement" type="number" min="1" [(ngModel)]="remboursementForm.montant" required />
+        </label>
+        <label>
+          Type
+          <select name="typeRemboursement" [(ngModel)]="remboursementForm.type">
+            <option *ngFor="let type of typesRemboursement" [value]="type">{{ formatType(type) }}</option>
+          </select>
+        </label>
+        <button type="submit" [disabled]="remboursementNgForm.invalid">Ajouter</button>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Montant</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let remboursement of remboursements">
+              <td>{{ remboursement.id }}</td>
+              <td>{{ remboursement.date }}</td>
+              <td>{{ remboursement.montant | currency:'MAD':'symbol':'1.0-2' }}</td>
+              <td>{{ formatType(remboursement.type) }}</td>
+            </tr>
+            <tr *ngIf="remboursements.length === 0">
+              <td colspan="4" class="empty">Aucun remboursement a afficher</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+</main>
