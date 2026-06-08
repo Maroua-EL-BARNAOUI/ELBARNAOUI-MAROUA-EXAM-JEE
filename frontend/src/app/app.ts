@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from './auth.service';
 import { BankCreditService } from './bank-credit.service';
-import { Client, Credit, Remboursement, StatutCredit, TypeBien, TypeCredit, TypeRemboursement } from './models';
+import { AuthRequest, AuthResponse, Client, Credit, Remboursement, Role, StatutCredit, TypeBien, TypeCredit, TypeRemboursement } from './models';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ export class App implements OnInit {
   remboursements: Remboursement[] = [];
 
   selectedCredit?: Credit;
+  currentUser: AuthResponse | null = null;
   selectedStatut: StatutCredit | '' = '';
   mensualite?: number;
   message = '';
@@ -36,15 +38,53 @@ export class App implements OnInit {
 
   remboursementForm: Remboursement = this.emptyRemboursementForm();
 
-  constructor(private readonly bankCreditService: BankCreditService) {}
+  loginForm: AuthRequest = {
+    username: 'admin',
+    password: 'admin123'
+  };
+
+  constructor(
+    private readonly bankCreditService: BankCreditService,
+    private readonly authService: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.refreshData();
+    this.currentUser = this.authService.getCurrentUser();
+    if (this.currentUser) {
+      this.refreshData();
+    }
+  }
+
+  login(): void {
+    this.clearFeedback();
+    this.authService.login(this.loginForm).subscribe({
+      next: user => {
+        this.currentUser = user;
+        this.message = 'Connexion reussie.';
+        this.refreshData();
+      },
+      error: () => this.handleError('Identifiants invalides.')
+    });
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.currentUser = null;
+    this.clients = [];
+    this.credits = [];
+    this.remboursements = [];
+    this.selectedCredit = undefined;
+    this.message = '';
+    this.error = '';
   }
 
   refreshData(): void {
     this.loading = true;
     this.error = '';
+    if (!this.hasAnyRole(['ROLE_ADMIN', 'ROLE_EMPLOYE'])) {
+      this.loadCredits();
+      return;
+    }
     this.bankCreditService.listClients().subscribe({
       next: clients => {
         this.clients = clients;
@@ -65,6 +105,9 @@ export class App implements OnInit {
   }
 
   createClient(): void {
+    if (!this.hasRole('ROLE_ADMIN')) {
+      return;
+    }
     this.clearFeedback();
     this.bankCreditService.saveClient(this.clientForm).subscribe({
       next: () => {
@@ -95,6 +138,9 @@ export class App implements OnInit {
   }
 
   accepterCredit(credit: Credit): void {
+    if (!this.hasAnyRole(['ROLE_ADMIN', 'ROLE_EMPLOYE'])) {
+      return;
+    }
     if (!credit.id) {
       return;
     }
@@ -109,6 +155,9 @@ export class App implements OnInit {
   }
 
   rejeterCredit(credit: Credit): void {
+    if (!this.hasAnyRole(['ROLE_ADMIN', 'ROLE_EMPLOYE'])) {
+      return;
+    }
     if (!credit.id) {
       return;
     }
@@ -139,6 +188,9 @@ export class App implements OnInit {
   }
 
   createRemboursement(): void {
+    if (!this.hasAnyRole(['ROLE_ADMIN', 'ROLE_EMPLOYE'])) {
+      return;
+    }
     this.clearFeedback();
     this.bankCreditService.saveRemboursement(this.remboursementForm).subscribe({
       next: () => {
@@ -153,6 +205,14 @@ export class App implements OnInit {
 
   formatType(value?: string): string {
     return value ? value.replace(/_/g, ' ') : '-';
+  }
+
+  hasRole(role: Role): boolean {
+    return this.authService.hasRole(role);
+  }
+
+  hasAnyRole(roles: Role[]): boolean {
+    return this.authService.hasAnyRole(roles);
   }
 
   private emptyCreditForm(): Credit {

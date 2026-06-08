@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.sid.exam.dto.RemboursementDTO;
 import org.sid.exam.services.BankCreditService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +28,7 @@ public class RemboursementRestController {
     }
 
     @GetMapping("/credits/{creditId}/remboursements")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYE','CLIENT')")
     @Operation(summary = "Lister les remboursements d'un credit")
     public List<RemboursementDTO> listRemboursementsByCredit(@PathVariable Long creditId) {
         return bankCreditService.listRemboursementsByCredit(creditId);
@@ -34,6 +36,7 @@ public class RemboursementRestController {
 
     @PostMapping("/remboursements")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYE')")
     @Operation(summary = "Ajouter un remboursement")
     public RemboursementDTO saveRemboursement(@RequestBody RemboursementDTO remboursementDTO) {
         return bankCreditService.saveRemboursement(remboursementDTO);

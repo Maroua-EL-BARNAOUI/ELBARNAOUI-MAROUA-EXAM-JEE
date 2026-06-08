@@ -1,4 +1,31 @@
-<main class="app-shell">
+<main class="login-shell" *ngIf="!currentUser">
+  <section class="login-panel">
+    <p class="eyebrow">Authentification JWT</p>
+    <h1>Gestion des credits bancaires</h1>
+
+    <form class="login-form" (ngSubmit)="login()" #loginNgForm="ngForm">
+      <label>
+        Nom d'utilisateur
+        <input name="username" [(ngModel)]="loginForm.username" required />
+      </label>
+      <label>
+        Mot de passe
+        <input name="password" type="password" [(ngModel)]="loginForm.password" required />
+      </label>
+      <button type="submit" [disabled]="loginNgForm.invalid">Se connecter</button>
+    </form>
+
+    <div class="demo-users">
+      <span>admin / admin123</span>
+      <span>employe / employe123</span>
+      <span>client / client123</span>
+    </div>
+
+    <div class="feedback error" *ngIf="error">{{ error }}</div>
+  </section>
+</main>
+
+<main class="app-shell" *ngIf="currentUser">
   <aside class="sidebar">
     <div>
       <p class="eyebrow">Banque</p>
@@ -19,6 +46,11 @@
       <span>{{ credits.length }}</span>
       <small>credits affiches</small>
     </div>
+    <div class="user-box">
+      <strong>{{ currentUser.username }}</strong>
+      <small>{{ currentUser.roles.join(', ') }}</small>
+      <button type="button" class="ghost-button logout-button" (click)="logout()">Deconnexion</button>
+    </div>
   </aside>
 
   <section class="workspace">
@@ -33,7 +65,7 @@
     <div class="feedback success" *ngIf="message">{{ message }}</div>
     <div class="feedback error" *ngIf="error">{{ error }}</div>
 
-    <section id="clients" class="panel">
+    <section id="clients" class="panel" *ngIf="hasAnyRole(['ROLE_ADMIN', 'ROLE_EMPLOYE'])">
       <div class="section-heading">
         <div>
           <p class="eyebrow">Clients</p>
@@ -41,7 +73,7 @@
         </div>
       </div>
 
-      <form class="form-grid compact" (ngSubmit)="createClient()" #clientNgForm="ngForm">
+      <form class="form-grid compact" (ngSubmit)="createClient()" #clientNgForm="ngForm" *ngIf="hasRole('ROLE_ADMIN')">
         <label>
           Nom
           <input name="nom" [(ngModel)]="clientForm.nom" required placeholder="Nom du client" />
@@ -94,10 +126,11 @@
       <form class="form-grid" (ngSubmit)="createCredit()" #creditNgForm="ngForm">
         <label>
           Client
-          <select name="clientId" [(ngModel)]="creditForm.clientId" required>
+          <select name="clientId" [(ngModel)]="creditForm.clientId" required *ngIf="hasAnyRole(['ROLE_ADMIN', 'ROLE_EMPLOYE'])">
             <option [ngValue]="0" disabled>Selectionner</option>
             <option *ngFor="let client of clients" [ngValue]="client.id">{{ client.nom }}</option>
           </select>
+          <input name="clientId" type="number" min="1" [(ngModel)]="creditForm.clientId" required *ngIf="hasRole('ROLE_CLIEN')" />
         </label>
         <label>
           Type
@@ -159,8 +192,8 @@
               <td><span class="status" [ngClass]="credit.statut">{{ formatType(credit.statut) }}</span></td>
               <td class="actions">
                 <button type="button" class="icon-button" title="Afficher" (click)="selectCredit(credit)">Voir</button>
-                <button type="button" class="icon-button accept" title="Accepter" (click)="accepterCredit(credit)">OK</button>
-                <button type="button" class="icon-button reject" title="Rejeter" (click)="rejeterCredit(credit)">Non</button>
+                <button type="button" class="icon-button accept" title="Accepter" (click)="accepterCredit(credit)" *ngIf="hasAnyRole(['ROLE_ADMIN', 'ROLE_EMPLOYE'])">OK</button>
+                <button type="button" class="icon-button reject" title="Rejeter" (click)="rejeterCredit(credit)" *ngIf="hasAnyRole(['ROLE_ADMIN', 'ROLE_EMPLOYE'])">Non</button>
               </td>
             </tr>
             <tr *ngIf="credits.length === 0">
@@ -183,7 +216,7 @@
         </div>
       </div>
 
-      <form class="form-grid compact" (ngSubmit)="createRemboursement()" #remboursementNgForm="ngForm" *ngIf="selectedCredit">
+      <form class="form-grid compact" (ngSubmit)="createRemboursement()" #remboursementNgForm="ngForm" *ngIf="selectedCredit && hasAnyRole(['ROLE_ADMIN', 'ROLE_EMPLOYE'])">
         <label>
           Date
           <input name="date" type="date" [(ngModel)]="remboursementForm.date" required />

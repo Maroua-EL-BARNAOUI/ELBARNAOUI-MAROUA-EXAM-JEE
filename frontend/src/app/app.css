@@ -1,3 +1,38 @@
+.login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: #f4f6f8;
+}
+
+.login-panel {
+  width: min(460px, 100%);
+  padding: 28px;
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.login-panel h1 {
+  margin: 0 0 22px;
+  font-size: 28px;
+  letter-spacing: 0;
+}
+
+.login-form {
+  display: grid;
+  gap: 14px;
+}
+
+.demo-users {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+  color: #52606f;
+  font-size: 13px;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
@@ -72,6 +107,25 @@ nav a:hover {
 
 .sidebar-metric small {
   color: #c6cfda;
+}
+
+.user-box {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid #354156;
+}
+
+.user-box small {
+  color: #c6cfda;
+  line-height: 1.4;
+}
+
+.logout-button {
+  width: 100%;
+  background: transparent;
+  color: #ffffff;
 }
 
 .workspace {

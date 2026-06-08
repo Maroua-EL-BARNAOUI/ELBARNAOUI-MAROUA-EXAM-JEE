@@ -6,6 +6,7 @@ import org.sid.exam.dto.ClientDTO;
 import org.sid.exam.dto.CreditDTO;
 import org.sid.exam.services.BankCreditService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,12 +30,14 @@ public class ClientRestController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYE')")
     @Operation(summary = "Lister tous les clients")
     public List<ClientDTO> listClients() {
         return bankCreditService.listClients();
     }
 
     @GetMapping("/{clientId}")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYE')")
     @Operation(summary = "Consulter un client par son id")
     public ClientDTO getClient(@PathVariable Long clientId) {
         return bankCreditService.getClient(clientId);
@@ -42,12 +45,14 @@ public class ClientRestController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Creer un client")
     public ClientDTO saveClient(@RequestBody ClientDTO clientDTO) {
         return bankCreditService.saveClient(clientDTO);
     }
 
     @PutMapping("/{clientId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Modifier un client")
     public ClientDTO updateClient(@PathVariable Long clientId, @RequestBody ClientDTO clientDTO) {
         clientDTO.setId(clientId);
@@ -55,6 +60,7 @@ public class ClientRestController {
     }
 
     @GetMapping("/{clientId}/credits")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYE')")
     @Operation(summary = "Lister les credits d'un client")
     public List<CreditDTO> listCreditsByClient(@PathVariable Long clientId) {
         return bankCreditService.listCreditsByClient(clientId);
